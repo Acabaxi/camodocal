@@ -21,6 +21,9 @@ public:
     void addChessboardData(const std::vector<cv::Point2f>& cornersLeft,
                            const std::vector<cv::Point2f>& cornersRight);
 
+    void addCircleGridData(const std::vector<cv::Point2f>& cornersLeft,
+                           const std::vector<cv::Point2f>& cornersRight);
+
     bool calibrate(void);
 
     int sampleCount(void) const;

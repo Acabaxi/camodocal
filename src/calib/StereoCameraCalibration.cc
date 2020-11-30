@@ -40,6 +40,14 @@ StereoCameraCalibration::addChessboardData(const std::vector<cv::Point2f>& corne
     m_calibRight.addChessboardData(cornersRight);
 }
 
+void
+StereoCameraCalibration::addCircleGridData(const std::vector<cv::Point2f>& cornersLeft,
+                                           const std::vector<cv::Point2f>& cornersRight)
+{
+    m_calibLeft.addChessboardData(cornersLeft);
+    m_calibRight.addChessboardData(cornersRight);
+}
+
 bool
 StereoCameraCalibration::calibrate(void)
 {

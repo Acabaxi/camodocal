@@ -89,8 +89,10 @@ set(GENERATED_FILE_COMMENT
 configure_file(CamOdoCalConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/CamOdoCalConfig.h)
 configure_file(CamOdoCalPathConfig.h.in ${CMAKE_CURRENT_BINARY_DIR}/CamOdoCalPathConfig.h)
 
+#find_package(OpenCV 4.5.1)
 ############## Include Directories ##############
 
+message(STATUS "OPENCV DIRS = ${OpenCV_INCLUDE_DIRS}")
 # Set the search paths for include files
 include_directories(
   # External
@@ -126,7 +128,7 @@ if(CAMODOCAL_PLATFORM_UNIX)
     find_package(Threads)
     find_package(Librt)
     find_package(Libm)
-    
+
     set(CAMODOCAL_PLATFORM_UNIX_LIBRARIES ${LIBDL_LIBRARIES} ${LIBNSL_LIBRARIES} ${LIBM_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT} ${Librt_LIBRARIES})
     
     if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")

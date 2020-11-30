@@ -171,8 +171,8 @@ int main(int argc, char** argv)
             cv::Mat sketch;
             chessboard.getSketch().copyTo(sketch);
 
-            cv::imshow("Image", sketch);
-            cv::waitKey(50);
+//            cv::imshow("Image", sketch);
+//            cv::waitKey(50);
         }
         else if (verbose)
         {

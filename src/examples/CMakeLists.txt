@@ -29,6 +29,21 @@ camodocal_link_libraries(stereo_calib
   camodocal_chessboard
 )
 
+camodocal_executable(stereo_calib_custom
+  stereo_calib_custom.cc
+)
+
+camodocal_link_libraries(stereo_calib_custom
+  ${CAMODOCAL_PLATFORM_UNIX_LIBRARIES}
+  ${Boost_FILESYSTEM_LIBRARY}
+  ${Boost_PROGRAM_OPTIONS_LIBRARY}
+  ${Boost_SYSTEM_LIBRARY}
+  ${OpenCV_LIBS}
+  camodocal_calib
+  camodocal_chessboard
+  camodocal_circle_grid
+)
+
 camodocal_executable(extrinsic_calib
   extrinsic_calib.cc
 )

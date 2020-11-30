@@ -64,6 +64,22 @@ CameraCalibration::addChessboardData(const std::vector<cv::Point2f>& corners)
     m_scenePoints.push_back(scenePointsInView);
 }
 
+void
+CameraCalibration::addCircleGridData(const std::vector<cv::Point2f>& corners)
+{
+    m_imagePoints.push_back(corners);
+
+    std::vector<cv::Point3f> scenePointsInView;
+
+
+
+    for (int j = 0; j < m_boardSize.width; j++)
+      for (int k = 0; k < m_boardSize.height; k++)
+	scenePointsInView.push_back(cv::Point3f(j * m_squareSize, (2 * k + j % 2) * m_squareSize, 0));
+
+    m_scenePoints.push_back(scenePointsInView);
+}
+
 bool
 CameraCalibration::calibrate(void)
 {
