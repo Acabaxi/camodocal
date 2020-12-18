@@ -1,4 +1,4 @@
-#include "camodocal/calib/CameraCalibration.h"
+﻿#include "camodocal/calib/CameraCalibration.h"
 
 #include <cstdio>
 #include <Eigen/Eigen>
@@ -71,10 +71,8 @@ CameraCalibration::addCircleGridData(const std::vector<cv::Point2f>& corners)
 
     std::vector<cv::Point3f> scenePointsInView;
 
-
-
-    for (int j = 0; j < m_boardSize.width; j++)
-      for (int k = 0; k < m_boardSize.height; k++)
+    for (int j = 0; j < m_boardSize.height; j++)
+      for (int k = 0; k < m_boardSize.width; k++)
 	scenePointsInView.push_back(cv::Point3f(j * m_squareSize, (2 * k + j % 2) * m_squareSize, 0));
 
     m_scenePoints.push_back(scenePointsInView);
@@ -266,12 +264,12 @@ CameraCalibration::drawResults(std::vector<cv::Mat>& images) const
             cv::circle(image,
                        cv::Point(cvRound(pObs.x * drawMultiplier),
                                  cvRound(pObs.y * drawMultiplier)),
-                       5, green, 2, CV_AA, drawShiftBits);
+                       2, green, 2, CV_FILLED, drawShiftBits);
 
             cv::circle(image,
                        cv::Point(cvRound(pEst.x * drawMultiplier),
                                  cvRound(pEst.y * drawMultiplier)),
-                       5, red, 2, CV_AA, drawShiftBits);
+                       2, red, 2, CV_FILLED, drawShiftBits);
 
             float error = cv::norm(pObs - pEst);
 
@@ -279,6 +277,26 @@ CameraCalibration::drawResults(std::vector<cv::Mat>& images) const
             if (error > errorMax)
             {
                 errorMax = error;
+            }
+
+            if(j+1 < m_imagePoints.at(i).size())
+            {
+                cv::Point2f pObsNext = m_imagePoints.at(i).at(j+1);
+                cv::Point2f pEstNext = estImagePoints.at(j+1);
+                cv::line(image,
+                         cv::Point(cvRound(pObs.x * drawMultiplier),
+                                   cvRound(pObs.y * drawMultiplier)),
+                         cv::Point(cvRound(pObsNext.x * drawMultiplier),
+                                   cvRound(pObsNext.y * drawMultiplier)),
+                         green, 1, cv::FILLED, drawShiftBits);
+
+                cv::line(image,
+                         cv::Point(cvRound(pEst.x * drawMultiplier),
+                                   cvRound(pEst.y * drawMultiplier)),
+                         cv::Point(cvRound(pEstNext.x * drawMultiplier),
+                                   cvRound(pEstNext.y * drawMultiplier)),
+                         red, 1, cv::FILLED, drawShiftBits);
+
             }
         }
 
@@ -290,6 +308,112 @@ CameraCalibration::drawResults(std::vector<cv::Mat>& images) const
                     cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
                     1, CV_AA);
     }
+}
+
+void CameraCalibration::writeStats(std::vector<cv::Mat>& stats) const
+{
+    std::vector<cv::Mat> rvecs, tvecs;
+
+    for (size_t i = 0; i < stats.size(); ++i)
+    {
+        cv::Mat rvec(3, 1, CV_64F);
+        rvec.at<double>(0) = m_cameraPoses.at<double>(i,0);
+        rvec.at<double>(1) = m_cameraPoses.at<double>(i,1);
+        rvec.at<double>(2) = m_cameraPoses.at<double>(i,2);
+
+        cv::Mat tvec(3, 1, CV_64F);
+        tvec.at<double>(0) = m_cameraPoses.at<double>(i,3);
+        tvec.at<double>(1) = m_cameraPoses.at<double>(i,4);
+        tvec.at<double>(2) = m_cameraPoses.at<double>(i,5);
+
+        rvecs.push_back(rvec);
+        tvecs.push_back(tvec);
+    }
+
+    int drawShiftBits = 4;
+    int drawMultiplier = 1 << drawShiftBits;
+
+    cv::Scalar green(0, 255, 0);
+    cv::Scalar red(0, 0, 255);
+
+    std::cout << m_camera->cameraName() << std::endl;
+    std::ofstream camera_stats;
+    std::string filePath;
+    filePath = "/tmp/" + m_camera->cameraName() + ".csv";
+    camera_stats.open(filePath.c_str(), std::ofstream::out | std::ofstream::trunc);
+    if (!camera_stats)
+    {
+      std::cout << "Can't open output file " << filePath << std::endl;
+      exit(1);
+    }
+
+    camera_stats << "pattern_num" << "," << "pt_num" << "," << "r" << ","  << "p" << "," << "yaw" << ","
+                 << "obs_x" << "," << "obs_y" << "," << "err_x" << "," << "err_y" << std::endl;
+
+    for (size_t i = 0; i < stats.size(); ++i)
+    {
+        cv::Mat& image = stats.at(i);
+        if (image.channels() == 1)
+        {
+            cv::cvtColor(image, image, CV_GRAY2RGB);
+        }
+
+        std::vector<cv::Point2f> estImagePoints;
+        m_camera->projectPoints(m_scenePoints.at(i), rvecs.at(i), tvecs.at(i),
+                                estImagePoints);
+
+        float errorSum = 0.0f;
+        float errorMax = std::numeric_limits<float>::min();
+
+        double angle = norm(rvecs[i]);
+        double r = rvecs[i].at<double>(0);
+        double p = rvecs[i].at<double>(1);
+        double y = rvecs[i].at<double>(2);
+
+        double r_norm = rvecs[i].at<double>(0)/angle;
+        double p_norm = rvecs[i].at<double>(1)/angle;
+        double y_norm = rvecs[i].at<double>(2)/angle;
+
+        Eigen::AngleAxis<float> aaa(angle, Eigen::Vector3f(r_norm, p_norm, y_norm));
+        Eigen::Matrix3f m;
+        m = aaa.toRotationMatrix();
+        Eigen::Vector3f ea = m.eulerAngles(2, 1, 0);
+        float yaw = ea.x();
+        float pitch = ea.y();
+        float roll = ea.z();
+        std::cout << "roll " << roll << " pitch " << pitch <<" yaw " << yaw <<std::endl;
+//        zaszas.eulerAngles(2, 1, 0)
+
+        for (size_t j = 0; j < m_imagePoints.at(i).size(); ++j)
+        {
+            cv::Point2f pObs = m_imagePoints.at(i).at(j);
+            cv::Point2f pEst = estImagePoints.at(j);
+
+            cv::circle(image,
+                       cv::Point(cvRound(pObs.x * drawMultiplier),
+                                 cvRound(pObs.y * drawMultiplier)),
+                       2, green, 2, CV_FILLED, drawShiftBits);
+
+            cv::circle(image,
+                       cv::Point(cvRound(pEst.x * drawMultiplier),
+                                 cvRound(pEst.y * drawMultiplier)),
+                       2, red, 2, CV_FILLED, drawShiftBits);
+
+            cv::Point2f errorXY = pObs - pEst;
+            float error = cv::norm(pObs - pEst);
+
+            errorSum += error;
+            if (error > errorMax)
+            {
+                errorMax = error;
+            }
+
+            camera_stats << i << "," << j << "," << r << ","  << p << "," << y << "," << pObs.x << "," << pObs.y << "," << errorXY.x << "," << errorXY.y << std::endl;
+        }
+    }
+
+    camera_stats.close();
+    return;
 }
 
 void

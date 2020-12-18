@@ -43,6 +43,8 @@ public:
 
     void drawResults(std::vector<cv::Mat>& images) const;
 
+    void writeStats(std::vector<cv::Mat>& stats) const;
+
     void writeParams(const std::string& filename) const;
 
     bool writeChessboardData(const std::string& filename) const;

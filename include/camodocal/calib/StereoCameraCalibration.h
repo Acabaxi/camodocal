@@ -40,8 +40,13 @@ public:
     void drawResults(std::vector<cv::Mat>& imagesLeft,
                      std::vector<cv::Mat>& imagesRight) const;
 
+    void writeStats(std::vector<cv::Mat>& statsLeft,
+                    std::vector<cv::Mat>& statsRight) const;
+
     void writeParams(const std::string& directory) const;
     void setVerbose(bool verbose);
+
+    void singleExtrinsic(void) const;
 
 private:
     CameraCalibration m_calibLeft;

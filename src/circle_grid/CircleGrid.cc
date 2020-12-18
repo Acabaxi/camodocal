@@ -3,7 +3,7 @@
 #include <opencv2/calib3d/calib3d.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-
+#include <iostream>
 namespace camodocal
 {
 
@@ -70,6 +70,7 @@ CircleGrid::findCircleGridCorners(const cv::Mat& image,
                                   std::vector<cv::Point2f>& corners,
                                   int flags, bool useOpenCV)
 {
+    std::cout << "here " << std::endl;
     if (useOpenCV)
     {
 	    // Avoid filtering pattern when it's too close to the camera
@@ -78,11 +79,11 @@ CircleGrid::findCircleGridCorners(const cv::Mat& image,
 	    params.minArea = 100;
 	    cv::Ptr<cv::FeatureDetector> blobDetector = cv::SimpleBlobDetector::create(params);
 
-	    return cv::findCirclesGrid(image, patternSize, corners,
+        bool zas = cv::findCirclesGrid(image, patternSize, corners,
 		                            cv::CALIB_CB_ASYMMETRIC_GRID | cv::CALIB_CB_CLUSTERING, blobDetector);
-
+        return zas;
     }
-
+    return false;
 }
 
 }

@@ -1,4 +1,4 @@
-#include "camodocal/calib/StereoCameraCalibration.h"
+﻿#include "camodocal/calib/StereoCameraCalibration.h"
 
 #include <boost/filesystem.hpp>
 #include <opencv2/core/eigen.hpp>
@@ -44,8 +44,8 @@ void
 StereoCameraCalibration::addCircleGridData(const std::vector<cv::Point2f>& cornersLeft,
                                            const std::vector<cv::Point2f>& cornersRight)
 {
-    m_calibLeft.addChessboardData(cornersLeft);
-    m_calibRight.addChessboardData(cornersRight);
+    m_calibLeft.addCircleGridData(cornersLeft);
+    m_calibRight.addCircleGridData(cornersRight);
 }
 
 bool
@@ -194,7 +194,10 @@ StereoCameraCalibration::calibrate(void)
     cameraRight()->writeParameters(intrinsicCameraRParams);
 
     ceres::Problem problem;
-
+//    intrinsicCameraLParams.data()[0] = 0;
+//    intrinsicCameraRParams.data()[0] = 0;
+//    intrinsicCameraLParams.data()[1] = 0;
+//    intrinsicCameraRParams.data()[1] = 0;
     for (int i = 0; i < imageCount; ++i)
     {
         for (size_t j = 0; j < scenePoints().at(i).size(); ++j)
@@ -210,7 +213,8 @@ StereoCameraCalibration::calibrate(void)
                                                                       Eigen::Vector2d(iptL.x, iptL.y),
                                                                       Eigen::Vector2d(iptR.x, iptR.y));
 
-            ceres::LossFunction* lossFunction = new ceres::CauchyLoss(1.0);
+            ceres::LossFunction* lossFunction = new ceres::CauchyLoss(5.0);
+
             problem.AddResidualBlock(costFunction, lossFunction,
                                      intrinsicCameraLParams.data(),
                                      intrinsicCameraRParams.data(),
@@ -236,7 +240,19 @@ StereoCameraCalibration::calibrate(void)
     problem.SetParameterization(m_q.coeffs().data(),
                                 quaternionParameterization);
 
+    // Freeze intrinsics
+
+//    problem.SetParameterBlockConstant(intrinsicCameraLParams.data() );
+//    problem.SetParameterBlockConstant(intrinsicCameraRParams.data() );
+    for (int i = 0; i < imageCount; ++i)
+    {
+//        problem.SetParameterBlockConstant(extrinsicCameraLParams[i]);
+//        problem.SetParameterBlockConstant(extrinsicCameraLParams[i]+4);
+    }
+
     ceres::Solver::Options options;
+//    options.trust_region_strategy_type = ceres::TrustRegionStrategyType::DOGLEG;
+//    options.use_nonmonotonic_steps = true;
     options.max_num_iterations = 1000;
     options.num_threads = 8;
 
@@ -373,6 +389,13 @@ StereoCameraCalibration::drawResults(std::vector<cv::Mat>& imagesLeft,
 {
     m_calibLeft.drawResults(imagesLeft);
     m_calibRight.drawResults(imagesRight);
+}
+
+void StereoCameraCalibration::writeStats(std::vector<cv::Mat>& statsLeft,
+                std::vector<cv::Mat>& statsRight) const
+{
+    m_calibLeft.writeStats(statsLeft);
+    m_calibRight.writeStats(statsRight);
 }
 
 void

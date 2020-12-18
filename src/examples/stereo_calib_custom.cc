@@ -40,7 +40,7 @@ int main(int argc, char** argv)
         ("camera-model", boost::program_options::value<std::string>(&cameraModel)->default_value("mei"), "Camera model: kannala-brandt | mei | pinhole")
         ("camera-name-l", boost::program_options::value<std::string>(&cameraNameL)->default_value("camera_left"), "Name of left camera")
         ("camera-name-r", boost::program_options::value<std::string>(&cameraNameR)->default_value("camera_right"), "Name of right camera")
-        ("opencv", boost::program_options::bool_switch(&useOpenCV)->default_value(false), "Use OpenCV to detect corners")
+        ("opencv", boost::program_options::bool_switch(&useOpenCV)->default_value(true), "Use OpenCV to detect corners")
         ("view-results", boost::program_options::bool_switch(&viewResults)->default_value(false), "View results")
         ("verbose,v", boost::program_options::bool_switch(&verbose)->default_value(false), "Verbose output")
         ;
@@ -140,6 +140,7 @@ int main(int argc, char** argv)
                 std::cerr << "# INFO: Adding " << imageFilenamesR.back() << std::endl;
             }
         }
+
     }
 
     if (imageFilenamesL.empty() || imageFilenamesR.empty())
@@ -221,13 +222,13 @@ int main(int argc, char** argv)
             cv::Mat sketch;
             chessboardL.getSketch().copyTo(sketch);
 
-            cv::imshow("Image - Left", sketch);
+//            cv::imshow("Image - Left", sketch);
 
             chessboardR.getSketch().copyTo(sketch);
 
-            cv::imshow("Image - Right", sketch);
+//            cv::imshow("Image - Right", sketch);
 
-            cv::waitKey(50);
+//            cv::waitKey(50);
         }
         else if (verbose)
         {
@@ -289,20 +290,25 @@ int main(int argc, char** argv)
 
         // visualize observed and reprojected points
         calibration.drawResults(cbImagesL, cbImagesR);
-
+        calibration.writeStats(cbImagesL, cbImagesR);
+        std::cout << "viz " << std::endl;
         for (size_t i = 0; i < cbImagesL.size(); ++i)
         {
             cv::putText(cbImagesL.at(i), cbImageFilenamesL.at(i), cv::Point(10,20),
                         cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
                         1, CV_AA);
-            cv::imshow("Image - Left", cbImagesL.at(i));
             cv::putText(cbImagesR.at(i), cbImageFilenamesR.at(i), cv::Point(10,20),
                         cv::FONT_HERSHEY_COMPLEX, 0.5, cv::Scalar(255, 255, 255),
                         1, CV_AA);
-            cv::imshow("Image - Right", cbImagesR.at(i));
-            cv::waitKey(0);
+            cv::Mat out;
+            std::string aaa = "/tmp/" + std::to_string(i) + ".jpg";
+//            std::cout << aaa << std::endl;
+            cv::hconcat(cbImagesL.at(i), cbImagesR.at(i), out);
+            cv::imwrite(aaa, out);
+//            cv::waitKey(0);
         }
     }
 
+    std::cout << "Calibration done. Results in /tmp" << std::endl;
     return 0;
 }
